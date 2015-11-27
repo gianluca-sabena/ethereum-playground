@@ -1,0 +1,32 @@
+
+
+geth-node-01:
+  build: ../geth-solidity
+  environment:
+    - NODE_ID=01
+  ports:
+    - "30301:30301"
+    - "8101:8101"
+  #command: /bin/bash -c "sleep 3600"
+
+geth-node-02:
+  build: ../geth-solidity
+  links:
+    - geth-node-01
+    - geth-node-03
+  environment:
+    - NODE_ID=02
+  ports:
+    - "30302:30302"
+    - "8102:8102"
+  #command: /bin/bash -c "sleep 3600"
+
+geth-node-03:
+  build: ../geth-solidity
+  links:
+    - geth-node-01
+  environment:
+    - NODE_ID=03
+  ports:
+    - "30303:30303"
+    - "8103:8103"

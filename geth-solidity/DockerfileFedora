@@ -1,0 +1,46 @@
+#
+#   Docker for ethereum go - FEDORA 21 ---
+#
+
+FROM fedora:21
+
+MAINTAINER https://github.com/gianluca-sabena
+
+# --- --- ---  Update OS --- --- ---
+RUN yum -y update
+RUN yum -y install git tar golang make \
+            automake autoconf libtool  gcc gcc-c++ \
+            leveldb-devel boost-devel gmp-devel cryptopp-devel miniupnpc-devel \
+            ncurses-devel readline-devel curl-devel \
+            python-devel jsoncpp-devel xkeyboard-config  argtable-devel mesa-dri-drivers snappy-devel \
+
+# --- --- --- Ethereum --- --- ---
+
+RUN cd /opt && git clone https://github.com/ethereum/go-ethereum.git && cd go-ethereum && make geth
+RUN ln -s /opt/go-ethereum/build/bin/geth /usr/bin/geth
+
+# --- --- --- Solidity compiler --- --- ---
+
+# need last version of cmake
+RUN curl -fsSL  https://cmake.org/files/v3.4/cmake-3.4.0-Linux-x86_64.sh -o /opt/cmake-install.sh && chmod u+x /opt/cmake-install.sh
+RUN mkdir /opt/cmake  && /opt/cmake-install.sh --prefix=/opt/cmake --exclude-subdir
+RUN ln -s /opt/cmake/bin/cmake /usr/bin/cmake
+
+# need libjson-rpc-cpp
+RUN yum -y install libmicrohttpd-devel
+RUN cd /opt && git clone https://github.com/cinemast/libjson-rpc-cpp
+RUN cd /opt/libjson-rpc-cpp; git checkout tags/v0.4.2;
+RUN mkdir -p /opt/libjson-rpc-cpp/build; cd /opt/libjson-rpc-cpp/build; cmake .. && make; make install; ldconfig
+
+RUN cd /opt && git clone https://github.com/ethereum/webthree-helpers
+RUN cd /opt && webthree-helpers/scripts/ethupdate.sh --no-push --simple-pull --project solidity
+
+RUN cd /opt && webthree-helpers/scripts/ethbuild.sh --no-git --cores 4 --project solidity -DEVMJIT=0 -DETHASHCL=0
+
+# --- --- --- Start --- --- ---
+#RUN mkdir /opt/console-scripts
+#COPY console-scripts/* /opt/console-scripts/
+
+COPY build/* /opt/
+CMD /opt/start.sh
+
